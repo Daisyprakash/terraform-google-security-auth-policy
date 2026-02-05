@@ -101,11 +101,12 @@ spec:
     roles:
       - level: Project
         roles:
-          - roles/owner
+          - roles/networksecurity.admin
+          - roles/serviceusage.serviceUsageAdmin
+          - roles/iam.infrastructureAdmin
+          - roles/iam.serviceAccountUser
     services:
-      - cloudresourcemanager.googleapis.com
-      - storage-api.googleapis.com
-      - serviceusage.googleapis.com
+      - networksecurity.googleapis.com
     providerVersions:
       - source: hashicorp/google
         version: ">= 5.3.0"
