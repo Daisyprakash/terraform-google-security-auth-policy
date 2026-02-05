@@ -59,7 +59,6 @@ variable "name" {
 variable "project_id" {
   description = "The project ID in which the Authorization Policy will be created. If not provided, the provider project is used."
   type        = string
-  default     = null
 }
 
 # A list of rules that match traffic.
@@ -86,9 +85,9 @@ variable "rules" {
       ip_blocks  = optional(list(string), [])
     })), [])
     destinations = optional(list(object({
-      hosts             = list(string)
-      ports             = list(number)
-      methods           = optional(list(string), [])
+      hosts   = list(string)
+      ports   = list(number)
+      methods = optional(list(string), [])
       http_header_match = optional(list(object({
         header_name = string
         regex_match = string

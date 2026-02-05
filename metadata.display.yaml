@@ -22,7 +22,8 @@ spec:
   info:
     title: Google Cloud Network Services AuthzExtension
     source:
-      repo: /
+      repo: https://github.com/Daisyprakash/terraform-google-security-auth-policy.git
+      sourceType: git
   ui:
     input:
       variables:
@@ -47,3 +48,7 @@ spec:
         rules:
           name: rules
           title: Rules
+    runtime:
+      outputs:
+        id:
+          visibility: VISIBILITY_ROOT
