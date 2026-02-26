@@ -13,22 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-# The versions.tf file is used to specify the required Terraform version and provider requirements.
 terraform {
-  # Specifies the minimum required version of Terraform to run this module.
   required_version = ">= 1.3.0"
   required_providers {
     google = {
       source  = "hashicorp/google"
-      version = ">= 5.3.0"
+      version = ">= 6.0.0" # Required for authz_policy
     }
-    # The google-beta provider is used to manage Google Cloud Platform resources.
     google-beta = {
       source  = "hashicorp/google-beta"
-      version = ">= 5.3.0"
+      version = ">= 6.0.0"
     }
-    # The random provider is used to generate random values.
     random = {
       source  = "hashicorp/random"
       version = ">= 3.0"

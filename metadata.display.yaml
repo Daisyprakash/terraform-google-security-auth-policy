@@ -33,9 +33,15 @@ spec:
         description:
           name: description
           title: Description
+        http_rules:
+          name: http_rules
+          title: Http Rules
         labels:
           name: labels
           title: Labels
+        load_balancing_scheme:
+          name: load_balancing_scheme
+          title: Load Balancing Scheme
         location:
           name: location
           title: Location
@@ -45,9 +51,9 @@ spec:
         project_id:
           name: project_id
           title: Project Id
-        rules:
-          name: rules
-          title: Rules
+        target_resources:
+          name: target_resources
+          title: Target Resources
     runtime:
       outputs:
         id:

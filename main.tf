@@ -14,88 +14,133 @@
  * limitations under the License.
  */
 
-# The main.tf file contains the core resource definition for the Terraform module.
-# Retrieves the current client configuration to determine the default project ID.
-data "google_client_config" "current" {}
-
-# Generates a random suffix for the authorization policy name if no name is provided.
-resource "random_id" "default" {
-  # The length of the random string in bytes.
-  byte_length = 4
-}
-
-# Enables the Network Security API for the project.
-resource "google_project_service" "networksecurity_api" {
-  # The project ID to enable the API in. Defaults to the provider project if not specified.
-  project = coalesce(var.project_id, data.google_client_config.current.project)
-  # The service to enable.
-  service = "networksecurity.googleapis.com"
-  # Do not disable the API when the resource is destroyed.
-  disable_on_destroy = false
-  # Use the beta provider for this resource.
-  provider = google-beta
-}
-
-# Creates a Google Network Security Authorization Policy.
-# This resource is used to define a set of rules that control access to network resources.
-resource "google_network_security_authorization_policy" "authz_policy" {
-  # The project ID to create the resource in. Defaults to the provider project if not specified.
-  project = coalesce(var.project_id, data.google_client_config.current.project)
-  # The name of the authorization policy. A random name is generated if not provided.
-  name = coalesce(var.name, "authz-policy-${random_id.default.hex}")
-  # The location of the authorization policy.
-  location = var.location
-  # The action to take when a rule match is found.
-  action = var.action
-  # A free-text description of the resource.
+resource "google_network_security_authz_policy" "authz_policy" {
+  project     = var.project_id
+  name        = var.name
+  location    = var.location
+  action      = var.action
   description = var.description
-  # The labels to apply to the resource.
-  labels = var.labels
-  # Use the beta provider for this resource, as it is often required for newer network security features.
-  provider = google-beta
+  labels      = var.labels
 
-  # A list of rules that match traffic.
-  dynamic "rules" {
-    for_each = var.rules
+  target {
+    load_balancing_scheme = var.load_balancing_scheme
+    resources             = var.target_resources
+  }
+
+  dynamic "http_rules" {
+    for_each = var.http_rules
     content {
+      when = http_rules.value.when
 
-      # A list of sources.
-      dynamic "sources" {
-        for_each = rules.value.sources
+      dynamic "from" {
+        for_each = http_rules.value.from != null ? [http_rules.value.from] : []
         content {
-          # A list of peer identities to match for authorization.
-          principals = sources.value.principals
-          # A list of CIDR ranges to match for authorization.
-          ip_blocks = sources.value.ip_blocks
+          # Sources matching
+          dynamic "sources" {
+            for_each = from.value.sources != null ? [from.value.sources] : []
+            content {
+              dynamic "principals" {
+                for_each = sources.value.principals
+                content {
+                  principal_selector = principals.value.selector
+                  # Deprecation fix: all match criteria moved inside 'principal' block
+                  principal {
+                    exact       = principals.value.exact
+                    prefix      = principals.value.prefix
+                    suffix      = principals.value.suffix
+                    contains    = principals.value.contains
+                    ignore_case = principals.value.ignore_case
+                  }
+                }
+              }
+              dynamic "ip_blocks" {
+                for_each = sources.value.ip_blocks
+                content {
+                  prefix = split("/", ip_blocks.value)[0]
+                  length = tonumber(split("/", ip_blocks.value)[1])
+                }
+              }
+            }
+          }
+
+          # Negated Sources matching
+          dynamic "not_sources" {
+            for_each = from.value.not_sources != null ? [from.value.not_sources] : []
+            content {
+              dynamic "principals" {
+                for_each = not_sources.value.principals
+                content {
+                  principal_selector = principals.value.selector
+                  principal {
+                    exact       = principals.value.exact
+                    ignore_case = principals.value.ignore_case
+                  }
+                }
+              }
+              dynamic "ip_blocks" {
+                for_each = not_sources.value.ip_blocks
+                content {
+                  prefix = split("/", ip_blocks.value)[0]
+                  length = tonumber(split("/", ip_blocks.value)[1])
+                }
+              }
+            }
+          }
         }
       }
 
-      # A list of destinations.
-      dynamic "destinations" {
-        for_each = rules.value.destinations
+      dynamic "to" {
+        for_each = http_rules.value.to != null ? [http_rules.value.to] : []
         content {
-          # A list of host names or FQDNs to match.
-          hosts = destinations.value.hosts
-          # A list of destination ports to match.
-          ports = destinations.value.ports
-          # A list of HTTP methods to match.
-          methods = destinations.value.methods
-
-          # A HTTP header matcher.
-          dynamic "http_header_match" {
-            # This dynamic block is used because http_header_match is an optional list block with max 1 item.
-            for_each = destinations.value.http_header_match
+          dynamic "operations" {
+            for_each = to.value.operations != null ? [to.value.operations] : []
             content {
-              # The name of the HTTP header to match.
-              header_name = http_header_match.value.header_name
-              # The value of the header must match the regular expression.
-              regex_match = http_header_match.value.regex_match
+              methods = operations.value.methods
+
+              dynamic "hosts" {
+                for_each = operations.value.hosts
+                content {
+                  exact       = hosts.value.exact
+                  prefix      = hosts.value.prefix
+                  suffix      = hosts.value.suffix
+                  contains    = hosts.value.contains
+                  ignore_case = hosts.value.ignore_case
+                }
+              }
+
+              header_set {
+                dynamic "headers" {
+                  for_each = operations.value.headers
+                  content {
+                    name = headers.value.name
+                    value {
+                      exact       = headers.value.exact
+                      prefix      = headers.value.prefix
+                      suffix      = headers.value.suffix
+                      contains    = headers.value.contains
+                      ignore_case = headers.value.ignore_case
+                    }
+                  }
+                }
+              }
+            }
+          }
+
+          dynamic "not_operations" {
+            for_each = to.value.not_operations != null ? [to.value.not_operations] : []
+            content {
+              methods = not_operations.value.methods
+              dynamic "hosts" {
+                for_each = not_operations.value.hosts
+                content {
+                  exact = hosts.value.exact
+                }
+              }
             }
           }
         }
       }
     }
   }
-  # Explicit dependency to ensure the API is enabled before creating the policy.
-  depends_on = [google_project_service.networksecurity_api]
+
 }

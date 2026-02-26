@@ -55,19 +55,21 @@ The predefined `roles/networkservices.admin` role contains the necessary permiss
 |------|-------------|------|---------|:--------:|
 | action | The action to take when a rule match is found. Possible values are 'ALLOW' or 'DENY'. | `string` | `"ALLOW"` | no |
 | description | A free-text description of the Authorization Policy. | `string` | `null` | no |
+| http\_rules | Complete nested structure for Authz Policy HTTP Rules. | <pre>list(object({<br>    when = optional(string)<br>    from = optional(object({<br>      sources = optional(object({<br>        ip_blocks = optional(list(string), [])<br>        principals = optional(list(object({<br>          selector    = optional(string, "CLIENT_CERT_URI_SAN")<br>          exact       = optional(string)<br>          prefix      = optional(string)<br>          suffix      = optional(string)<br>          contains    = optional(string)<br>          ignore_case = optional(bool, false)<br>        })), [])<br>      }))<br>      not_sources = optional(object({<br>        ip_blocks = optional(list(string), [])<br>        principals = optional(list(object({<br>          selector    = optional(string, "CLIENT_CERT_URI_SAN")<br>          exact       = optional(string)<br>          ignore_case = optional(bool, false)<br>        })), [])<br>      }))<br>    }))<br>    to = optional(object({<br>      operations = optional(object({<br>        methods = optional(list(string), [])<br>        hosts = optional(list(object({<br>          exact       = optional(string)<br>          prefix      = optional(string)<br>          suffix      = optional(string)<br>          contains    = optional(string)<br>          ignore_case = optional(bool, false)<br>        })), [])<br>        headers = optional(list(object({<br>          name        = string<br>          exact       = optional(string)<br>          prefix      = optional(string)<br>          suffix      = optional(string)<br>          contains    = optional(string)<br>          ignore_case = optional(bool, false)<br>        })), [])<br>      }))<br>      not_operations = optional(object({<br>        methods = optional(list(string), [])<br>        hosts = optional(list(object({<br>          exact = string<br>        })), [])<br>      }))<br>    }))<br>  }))</pre> | `[]` | no |
 | labels | A map of labels to attach to the Authorization Policy. | `map(string)` | `{}` | no |
+| load\_balancing\_scheme | Possible values: INTERNAL\_MANAGED, EXTERNAL\_MANAGED, INTERNAL\_SELF\_MANAGED. | `string` | `"INTERNAL_MANAGED"` | no |
 | location | The location of the authorization policy. Can be 'global' or a region. | `string` | `"global"` | no |
-| name | The name of the Authorization Policy. If not provided, a random name will be generated. | `string` | `null` | no |
+| name | The name of the Authorization Policy. If not provided, a random name will be generated. | `string` | n/a | yes |
 | project\_id | The project ID in which the Authorization Policy will be created. If not provided, the provider project is used. | `string` | n/a | yes |
-| rules | A list of rules that match traffic. A rule consists of a list of sources and a list of destinations.<br>If a traffic is matched by multiple rules, the first matched rule will be enforced.<br>If no rule is matched, the default action is enforced.<br>Each rule object can have the following attributes:<br>- `sources`: (Optional) A list of source specifications. A source specifies a list of identities or a list of IP blocks. Max 1 item.<br>  - `principals`: (Optional) A list of peer identities to match for authorization.<br>  - `ip_blocks`: (Optional) A list of CIDR ranges to match for authorization.<br>- `destinations`: (Optional) A list of destination specifications. A destination specifies a list of hosts, ports, methods, and a header matcher. Max 1 item.<br>  - `hosts`: (Required) A list of host names or FQDNs.<br>  - `ports`: (Required) A list of destination ports to match.<br>  - `methods`: (Optional) A list of HTTP methods to match.<br>  - `http_header_match`: (Optional) A HTTP header matcher. Max 1 item.<br>    - `header_name`: (Required) The name of the HTTP header to match.<br>    - `regex_match`: (Required) The value of the header must match the regular expression. | <pre>list(object({<br>    sources = optional(list(object({<br>      principals = optional(list(string), [])<br>      ip_blocks  = optional(list(string), [])<br>    })), [])<br>    destinations = optional(list(object({<br>      hosts   = list(string)<br>      ports   = list(number)<br>      methods = optional(list(string), [])<br>      http_header_match = optional(list(object({<br>        header_name = string<br>        regex_match = string<br>      })), [])<br>    })), [])<br>  }))</pre> | `[]` | no |
+| target\_resources | List of Forwarding Rule URLs. | `list(string)` | n/a | yes |
 
 ## Outputs
 
 | Name | Description |
 |------|-------------|
-| create\_time | The timestamp when the authorization policy was created. |
-| id | The canonical ID of the authorization policy, in the format `projects/{project}/locations/{location}/authorizationPolicies/{name}`. |
-| name | The name of the authorization policy. |
-| update\_time | The timestamp when the authorization policy was last updated. |
+| create\_time | The timestamp when the authz policy was created. |
+| id | The canonical ID of the authz policy. |
+| name | The name of the authz policy. |
+| update\_time | The timestamp when the authz policy was last updated. |
 
 <!-- END OF PRE-COMMIT-TERRAFORM DOCS HOOK -->
