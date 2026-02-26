@@ -39,9 +39,6 @@ spec:
         labels:
           name: labels
           title: Labels
-        load_balancing_scheme:
-          name: load_balancing_scheme
-          title: Load Balancing Scheme
         location:
           name: location
           title: Location
@@ -51,9 +48,9 @@ spec:
         project_id:
           name: project_id
           title: Project Id
-        target_resources:
-          name: target_resources
-          title: Target Resources
+        target:
+          name: target
+          title: Target
     runtime:
       outputs:
         id:

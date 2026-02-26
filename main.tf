@@ -23,8 +23,8 @@ resource "google_network_security_authz_policy" "authz_policy" {
   labels      = var.labels
 
   target {
-    load_balancing_scheme = var.load_balancing_scheme
-    resources             = var.target_resources
+    load_balancing_scheme = var.target.load_balancing_scheme
+    resources             = var.target.resources
   }
 
   dynamic "http_rules" {

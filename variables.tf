@@ -39,15 +39,12 @@ variable "action" {
   default = "ALLOW"
 }
 
-variable "load_balancing_scheme" {
-  description = "Possible values: INTERNAL_MANAGED, EXTERNAL_MANAGED, INTERNAL_SELF_MANAGED."
-  type        = string
-  default     = "INTERNAL_MANAGED"
-}
-
-variable "target_resources" {
-  description = "List of Forwarding Rule URLs."
-  type        = list(string)
+variable "target" {
+  description = "The target resources and load balancing scheme this policy applies to."
+  type = object({
+    load_balancing_scheme = optional(string, "INTERNAL_MANAGED")
+    resources             = list(string)
+  })
 }
 
 variable "description" {

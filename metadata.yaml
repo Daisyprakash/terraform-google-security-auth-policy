@@ -24,7 +24,7 @@ spec:
     source:
       repo: https://github.com/Daisyprakash/terraform-google-security-auth-policy.git
       sourceType: git
-    version: 0.0.2
+    version: 0.0.3
     actuationTool:
       flavor: Terraform
       version: ">= 1.3.0"
@@ -49,13 +49,13 @@ spec:
         description: The action to take when a rule match is found. Possible values are 'ALLOW' or 'DENY'.
         varType: string
         defaultValue: ALLOW
-      - name: load_balancing_scheme
-        description: "Possible values: INTERNAL_MANAGED, EXTERNAL_MANAGED, INTERNAL_SELF_MANAGED."
-        varType: string
-        defaultValue: INTERNAL_MANAGED
-      - name: target_resources
-        description: List of Forwarding Rule URLs.
-        varType: list(string)
+      - name: target
+        description: The target resources and load balancing scheme this policy applies to.
+        varType: |-
+          object({
+              load_balancing_scheme = optional(string, "INTERNAL_MANAGED")
+              resources             = list(string)
+            })
         required: true
       - name: description
         description: A free-text description of the Authorization Policy.
