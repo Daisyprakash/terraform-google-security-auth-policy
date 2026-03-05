@@ -30,6 +30,9 @@ spec:
         action:
           name: action
           title: Action
+        custom_provider:
+          name: custom_provider
+          title: Custom Provider
         description:
           name: description
           title: Description
@@ -45,6 +48,9 @@ spec:
         name:
           name: name
           title: Name
+        policy_profile:
+          name: policy_profile
+          title: Policy Profile
         project_id:
           name: project_id
           title: Project Id

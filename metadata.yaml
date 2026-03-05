@@ -24,7 +24,7 @@ spec:
     source:
       repo: https://github.com/Daisyprakash/terraform-google-security-auth-policy.git
       sourceType: git
-    version: 0.0.3
+    version: 0.0.4
     actuationTool:
       flavor: Terraform
       version: ">= 1.3.0"
@@ -64,6 +64,20 @@ spec:
         description: A map of labels to attach to the Authorization Policy.
         varType: map(string)
         defaultValue: {}
+      - name: custom_provider
+        description: Required if action is CUSTOM. Configuration for Authz Extension or Cloud IAP.
+        varType: |-
+          object({
+              authz_extension = optional(object({
+                resources = list(string)
+              }))
+              cloud_iap = optional(object({
+                enabled = bool
+              }))
+            })
+      - name: policy_profile
+        description: Defines the type of authorization (REQUEST_AUTHZ or CONTENT_AUTHZ).
+        varType: string
       - name: http_rules
         description: Complete nested structure for Authz Policy HTTP Rules.
         varType: |-
@@ -80,6 +94,16 @@ spec:
                     contains    = optional(string)
                     ignore_case = optional(bool, false)
                   })), [])
+                  resources = optional(list(object({
+                    tag_value_id_set = optional(list(string))
+                    iam_service_account = optional(object({ # Upgraded to object
+                      exact       = optional(string)
+                      prefix      = optional(string)
+                      suffix      = optional(string)
+                      contains    = optional(string)
+                      ignore_case = optional(bool, false)
+                    }))
+                  })), [])
                 }))
                 not_sources = optional(object({
                   ip_blocks = optional(list(string), [])
@@ -88,11 +112,28 @@ spec:
                     exact       = optional(string)
                     ignore_case = optional(bool, false)
                   })), [])
+                  resources = optional(list(object({
+                    tag_value_id_set = optional(list(string))
+                    iam_service_account = optional(object({ # Upgraded to object
+                      exact       = optional(string)
+                      prefix      = optional(string)
+                      suffix      = optional(string)
+                      contains    = optional(string)
+                      ignore_case = optional(bool, false)
+                    }))
+                  })), [])
                 }))
               }))
               to = optional(object({
                 operations = optional(object({
                   methods = optional(list(string), [])
+                  paths = optional(list(object({ # Upgraded to object
+                    exact       = optional(string)
+                    prefix      = optional(string)
+                    suffix      = optional(string)
+                    contains    = optional(string)
+                    ignore_case = optional(bool, false)
+                  })), [])
                   hosts = optional(list(object({
                     exact       = optional(string)
                     prefix      = optional(string)
@@ -108,9 +149,23 @@ spec:
                     contains    = optional(string)
                     ignore_case = optional(bool, false)
                   })), [])
+                  mcp = optional(object({
+                    base_protocol_methods_option = optional(string)
+                    methods = list(object({
+                      name   = string
+                      params = optional(string)
+                    }))
+                  }))
                 }))
                 not_operations = optional(object({
                   methods = optional(list(string), [])
+                  paths = optional(list(object({ # Upgraded to object
+                    exact       = optional(string)
+                    prefix      = optional(string)
+                    suffix      = optional(string)
+                    contains    = optional(string)
+                    ignore_case = optional(bool, false)
+                  })), [])
                   hosts = optional(list(object({
                     exact = string
                   })), [])
@@ -121,10 +176,14 @@ spec:
     outputs:
       - name: create_time
         description: The timestamp when the authz policy was created.
+      - name: effective_labels
+        description: All labels present on the resource in GCP.
       - name: id
         description: The canonical ID of the authz policy.
       - name: name
         description: The name of the authz policy.
+      - name: terraform_labels
+        description: The combination of labels configured directly and default provider labels.
       - name: update_time
         description: The timestamp when the authz policy was last updated.
   requirements:

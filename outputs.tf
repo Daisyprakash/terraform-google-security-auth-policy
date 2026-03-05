@@ -32,3 +32,13 @@ output "update_time" {
   description = "The timestamp when the authz policy was last updated."
   value       = google_network_security_authz_policy.authz_policy.update_time
 }
+
+output "effective_labels" {
+  description = "All labels present on the resource in GCP."
+  value       = google_network_security_authz_policy.authz_policy.effective_labels
+}
+
+output "terraform_labels" {
+  description = "The combination of labels configured directly and default provider labels."
+  value       = google_network_security_authz_policy.authz_policy.terraform_labels
+}

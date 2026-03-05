@@ -15,16 +15,35 @@
  */
 
 resource "google_network_security_authz_policy" "authz_policy" {
-  project     = var.project_id
-  name        = var.name
-  location    = var.location
-  action      = var.action
-  description = var.description
-  labels      = var.labels
+  project        = var.project_id
+  name           = var.name
+  location       = var.location
+  action         = var.action
+  policy_profile = var.policy_profile
+  description    = var.description
+  labels         = var.labels
 
   target {
     load_balancing_scheme = var.target.load_balancing_scheme
     resources             = var.target.resources
+  }
+
+  dynamic "custom_provider" {
+    for_each = var.custom_provider != null ? [var.custom_provider] : []
+    content {
+      dynamic "authz_extension" {
+        for_each = custom_provider.value.authz_extension != null ? [custom_provider.value.authz_extension] : []
+        content {
+          resources = authz_extension.value.resources
+        }
+      }
+      dynamic "cloud_iap" {
+        for_each = custom_provider.value.cloud_iap != null ? [custom_provider.value.cloud_iap] : []
+        content {
+          enabled = cloud_iap.value.enabled
+        }
+      }
+    }
   }
 
   dynamic "http_rules" {
@@ -35,7 +54,6 @@ resource "google_network_security_authz_policy" "authz_policy" {
       dynamic "from" {
         for_each = http_rules.value.from != null ? [http_rules.value.from] : []
         content {
-          # Sources matching
           dynamic "sources" {
             for_each = from.value.sources != null ? [from.value.sources] : []
             content {
@@ -43,7 +61,6 @@ resource "google_network_security_authz_policy" "authz_policy" {
                 for_each = sources.value.principals
                 content {
                   principal_selector = principals.value.selector
-                  # Deprecation fix: all match criteria moved inside 'principal' block
                   principal {
                     exact       = principals.value.exact
                     prefix      = principals.value.prefix
@@ -60,10 +77,29 @@ resource "google_network_security_authz_policy" "authz_policy" {
                   length = tonumber(split("/", ip_blocks.value)[1])
                 }
               }
+              dynamic "resources" {
+                for_each = sources.value.resources != null ? sources.value.resources : []
+                content {
+                  dynamic "tag_value_id_set" {
+                    for_each = resources.value.tag_value_id_set != null ? [resources.value.tag_value_id_set] : []
+                    content { ids = tag_value_id_set.value }
+                  }
+                  # Updated iam_service_account to support full block criteria
+                  dynamic "iam_service_account" {
+                    for_each = resources.value.iam_service_account != null ? [resources.value.iam_service_account] : []
+                    content {
+                      exact       = iam_service_account.value.exact
+                      prefix      = iam_service_account.value.prefix
+                      suffix      = iam_service_account.value.suffix
+                      contains    = iam_service_account.value.contains
+                      ignore_case = iam_service_account.value.ignore_case
+                    }
+                  }
+                }
+              }
             }
           }
 
-          # Negated Sources matching
           dynamic "not_sources" {
             for_each = from.value.not_sources != null ? [from.value.not_sources] : []
             content {
@@ -84,6 +120,25 @@ resource "google_network_security_authz_policy" "authz_policy" {
                   length = tonumber(split("/", ip_blocks.value)[1])
                 }
               }
+              dynamic "resources" {
+                for_each = not_sources.value.resources != null ? not_sources.value.resources : []
+                content {
+                  dynamic "tag_value_id_set" {
+                    for_each = resources.value.tag_value_id_set != null ? [resources.value.tag_value_id_set] : []
+                    content { ids = tag_value_id_set.value }
+                  }
+                  dynamic "iam_service_account" {
+                    for_each = resources.value.iam_service_account != null ? [resources.value.iam_service_account] : []
+                    content {
+                      exact       = iam_service_account.value.exact
+                      prefix      = iam_service_account.value.prefix
+                      suffix      = iam_service_account.value.suffix
+                      contains    = iam_service_account.value.contains
+                      ignore_case = iam_service_account.value.ignore_case
+                    }
+                  }
+                }
+              }
             }
           }
         }
@@ -97,6 +152,18 @@ resource "google_network_security_authz_policy" "authz_policy" {
             content {
               methods = operations.value.methods
 
+              # Updated paths to support full block criteria
+              dynamic "paths" {
+                for_each = operations.value.paths != null ? operations.value.paths : []
+                content {
+                  exact       = paths.value.exact
+                  prefix      = paths.value.prefix
+                  suffix      = paths.value.suffix
+                  contains    = paths.value.contains
+                  ignore_case = paths.value.ignore_case
+                }
+              }
+
               dynamic "hosts" {
                 for_each = operations.value.hosts
                 content {
@@ -105,6 +172,23 @@ resource "google_network_security_authz_policy" "authz_policy" {
                   suffix      = hosts.value.suffix
                   contains    = hosts.value.contains
                   ignore_case = hosts.value.ignore_case
+                }
+              }
+
+              dynamic "mcp" {
+                for_each = operations.value.mcp != null ? [operations.value.mcp] : []
+                content {
+                  base_protocol_methods_option = mcp.value.base_protocol_methods_option
+                  dynamic "methods" {
+                    for_each = mcp.value.methods
+                    content {
+                      name = methods.value.name
+                      dynamic "params" {
+                        for_each = methods.value.params != null ? [methods.value.params] : []
+                        content { exact = params.value }
+                      }
+                    }
+                  }
                 }
               }
 
@@ -130,11 +214,19 @@ resource "google_network_security_authz_policy" "authz_policy" {
             for_each = to.value.not_operations != null ? [to.value.not_operations] : []
             content {
               methods = not_operations.value.methods
+              dynamic "paths" {
+                for_each = not_operations.value.paths != null ? not_operations.value.paths : []
+                content {
+                  exact       = paths.value.exact
+                  prefix      = paths.value.prefix
+                  suffix      = paths.value.suffix
+                  contains    = paths.value.contains
+                  ignore_case = paths.value.ignore_case
+                }
+              }
               dynamic "hosts" {
                 for_each = not_operations.value.hosts
-                content {
-                  exact = hosts.value.exact
-                }
+                content { exact = hosts.value.exact }
               }
             }
           }

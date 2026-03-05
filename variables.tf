@@ -59,6 +59,24 @@ variable "labels" {
   default     = {}
 }
 
+variable "custom_provider" {
+  description = "Required if action is CUSTOM. Configuration for Authz Extension or Cloud IAP."
+  type = object({
+    authz_extension = optional(object({
+      resources = list(string)
+    }))
+    cloud_iap = optional(object({
+      enabled = bool
+    }))
+  })
+  default = null
+}
+
+variable "policy_profile" {
+  description = "Defines the type of authorization (REQUEST_AUTHZ or CONTENT_AUTHZ)."
+  type        = string
+  default     = null
+}
 variable "http_rules" {
   description = "Complete nested structure for Authz Policy HTTP Rules."
   type = list(object({
@@ -74,6 +92,16 @@ variable "http_rules" {
           contains    = optional(string)
           ignore_case = optional(bool, false)
         })), [])
+        resources = optional(list(object({
+          tag_value_id_set = optional(list(string))
+          iam_service_account = optional(object({ # Upgraded to object
+            exact       = optional(string)
+            prefix      = optional(string)
+            suffix      = optional(string)
+            contains    = optional(string)
+            ignore_case = optional(bool, false)
+          }))
+        })), [])
       }))
       not_sources = optional(object({
         ip_blocks = optional(list(string), [])
@@ -82,11 +110,28 @@ variable "http_rules" {
           exact       = optional(string)
           ignore_case = optional(bool, false)
         })), [])
+        resources = optional(list(object({
+          tag_value_id_set = optional(list(string))
+          iam_service_account = optional(object({ # Upgraded to object
+            exact       = optional(string)
+            prefix      = optional(string)
+            suffix      = optional(string)
+            contains    = optional(string)
+            ignore_case = optional(bool, false)
+          }))
+        })), [])
       }))
     }))
     to = optional(object({
       operations = optional(object({
         methods = optional(list(string), [])
+        paths = optional(list(object({ # Upgraded to object
+          exact       = optional(string)
+          prefix      = optional(string)
+          suffix      = optional(string)
+          contains    = optional(string)
+          ignore_case = optional(bool, false)
+        })), [])
         hosts = optional(list(object({
           exact       = optional(string)
           prefix      = optional(string)
@@ -102,9 +147,23 @@ variable "http_rules" {
           contains    = optional(string)
           ignore_case = optional(bool, false)
         })), [])
+        mcp = optional(object({
+          base_protocol_methods_option = optional(string)
+          methods = list(object({
+            name   = string
+            params = optional(string)
+          }))
+        }))
       }))
       not_operations = optional(object({
         methods = optional(list(string), [])
+        paths = optional(list(object({ # Upgraded to object
+          exact       = optional(string)
+          prefix      = optional(string)
+          suffix      = optional(string)
+          contains    = optional(string)
+          ignore_case = optional(bool, false)
+        })), [])
         hosts = optional(list(object({
           exact = string
         })), [])
