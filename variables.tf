@@ -42,7 +42,7 @@ variable "action" {
 variable "target" {
   description = "The target resources and load balancing scheme this policy applies to."
   type = object({
-    load_balancing_scheme = optional(string, "INTERNAL_MANAGED")
+    load_balancing_scheme = optional(string)
     resources             = list(string)
   })
 }
