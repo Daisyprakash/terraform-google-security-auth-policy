@@ -24,7 +24,6 @@ spec:
     source:
       repo: https://github.com/Daisyprakash/terraform-google-security-auth-policy.git
       sourceType: git
-    version: 0.0.5
     actuationTool:
       flavor: Terraform
       version: ">= 1.3.0"
@@ -57,6 +56,13 @@ spec:
               resources             = list(string)
             })
         required: true
+        connections:
+          - source:
+              source: github.com/Daisyprakash/terraform-google-agent-gateway
+              version: ">=0.0.3"
+            spec:
+              outputExpr: "[agent_gateway_id]"
+              inputPath: resources
       - name: description
         description: A free-text description of the Authorization Policy.
         varType: string
@@ -75,6 +81,13 @@ spec:
                 enabled = bool
               }))
             })
+        connections:
+          - source:
+              source: github.com/Daisyprakash/terraform-google-network-security-auth-extension
+              version: ">=0.0.4"
+            spec:
+              outputExpr: "[id]"
+              inputPath: authz_extension.resources
       - name: policy_profile
         description: Defines the type of authorization (REQUEST_AUTHZ or CONTENT_AUTHZ).
         varType: string
@@ -190,12 +203,11 @@ spec:
     roles:
       - level: Project
         roles:
-          - roles/networksecurity.admin
-          - roles/serviceusage.serviceUsageAdmin
-          - roles/iam.infrastructureAdmin
-          - roles/iam.serviceAccountUser
+          - roles/owner
     services:
-      - networksecurity.googleapis.com
+      - cloudresourcemanager.googleapis.com
+      - storage-api.googleapis.com
+      - serviceusage.googleapis.com
     providerVersions:
       - source: hashicorp/google
         version: ">= 6.0.0"
